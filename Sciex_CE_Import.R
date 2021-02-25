@@ -3,7 +3,12 @@ library(dplyr)
 library(stringr)
 library(RColorBrewer)
 library(ggplot2)
+library(plotly)
 
+# to suppress random warnings (bug, see )
+
+#!diagnostics suppress=net_y_sum, time_m
+  
 #creates df for sciex plotting
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
   
@@ -121,7 +126,7 @@ create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
 #plots a single CE trace from the sciex table function above
 plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALSE,
                           xlab = 'Time (min)', ylab = 'Response', xmin = NA, xmax = NA,
-                          ymax = NA, ymin = NA){
+                          ymax = NA, ymin = NA, interactive = FALSE){
 
   if (x_axis == 'seconds') {
     x_var <- 'time_s'
@@ -143,6 +148,11 @@ plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALS
     coord_cartesian(xlim = c(xmin, xmax), ylim = c(ymin, ymax))
   
   print(paste0('plotting ', x_var, ' vs ', y_var))
+  
+  if (interactive == TRUE){
+    plot <- ggplotly(plot)
+  }
+  
   return(plot)
   
 }
@@ -243,5 +253,216 @@ add_fractions <- function(plot_obj, x1 = 1, x2 = 2, x3 = 3, x4 = 4, x5 = 5, colo
   
   return(new_plot)
 }
+
+
+
+
+#calculate integral plot from df
+add_integration_df <- function(CE_df, column = "AU", correction_factor = 1, peak_start = NA, peak_end = NA){
+  
+  print("What type of basline integration? 'value', 'flat','peak', or 'slope'")
+  baseline_type <- readline(prompt = 'baseline type: ')
+  
+  if(baseline_type == 'flat'){
+    baseline_start <- as.numeric(readline(prompt = 'baseline start: '))
+    baseline_end <- as.numeric(readline(prompt = 'baseline end: '))
+    baseline_index_start <- which.min(abs(CE_df$time_m - baseline_start))
+    baseline_index_end <- which.min(abs(CE_df$time_m - baseline_end))
+    
+    df_baseline <- CE_df[baseline_index_start:baseline_index_end,]
+    baseline_value <- mean(df_baseline[[column]])
+    CE_df$baseline <- baseline_value
+    
+    print(paste0('average baseline value: ', baseline_value))
+    
+  } else if (baseline_type == 'peak') {
+    
+    #peak_start <- as.numeric(readline(prompt = 'peak start: '))
+    #peak_end <- as.numeric(readline(prompt = 'peak end: '))
+    peak_index_start <- which.min(abs(CE_df$time_m - peak_start))
+    peak_index_end <- which.min(abs(CE_df$time_m - peak_end))
+    
+    x1 <- CE_df$time_m[peak_index_start]
+    x2 <- CE_df$time_m[peak_index_end]
+    y1 <- CE_df[[column]][peak_index_start]
+    y2 <- CE_df[[column]][peak_index_end]
+    
+    
+    slope <- (y2-y1)/(x2-x1)
+    y_intercept <- y1 - (slope * x1)
+    
+    CE_df$baseline <- slope * CE_df$time_m + y_intercept
+    
+  } else if (baseline_type == 'slope') {
+    
+    baseline_start <- as.numeric(readline(prompt = 'baseline start: '))
+    baseline_end <- as.numeric(readline(prompt = 'baseline end: '))
+    baseline_index_start <- which.min(abs(CE_df$time_m - baseline_start))
+    baseline_index_end <- which.min(abs(CE_df$time_m - baseline_end))
+    
+    df_baseline <- CE_df[baseline_index_start:baseline_index_end,]
+    
+    lm <- lm(df_baseline[[column]]~df_baseline$time_m)
+    y_intercept <- coef(lm)["(Intercept)"][[1]]
+    slope <- coef(lm)["df_baseline$time_m"][[1]]
+    
+    CE_df$baseline <- slope * CE_df$time_m + y_intercept
+
+  } else if (baseline_type == 'value') {
+    
+      baseline_value <- as.numeric(readline(prompt = 'baseline value: '))
+      CE_df$baseline <- baseline_value
+
+  } else {
+
+    print('not a valid type')
+  }
+  
+  CE_df$net_y <- CE_df[[column]] - CE_df$baseline
+  
+  #get min per point, which will always be equal to the time in minutes at the second datapoint
+  min_per_point <- CE_df$time_m[2]
+  
+  CE_df$net_y_dx <- CE_df$net_y * min_per_point
+  
+  CE_df$net_y_dx_sum <- 0
+  for (i in 2:(nrow(CE_df))) {
+    CE_df$net_y_dx_sum[i] <- CE_df$net_y_dx_sum[i-1] + CE_df$net_y_dx[i]
+  }
+  CE_df$net_y_dx_sum <- CE_df$net_y_dx_sum * correction_factor
+  
+  
+  CE_df$net_y_sum <-0
+  for (i in 2:(nrow(CE_df))) {
+    CE_df$net_y_sum[i] <- CE_df$net_y_sum[i-1] + CE_df$net_y[i]
+  }
+  CE_df$net_y_sum <- CE_df$net_y_sum * correction_factor
+    
+  return(CE_df)
+}
+
+peak_area_height_time <- function(df, t1, t2){
+  t1_index <- which.min(abs(df$time_m-t1))
+
+  t2_index <- which.min(abs(df$time_m-t2))
+
+  time1_net_y_sum <- df$net_y_sum[t1_index]
+
+  time2_net_y_sum <- df$net_y_sum[t2_index]
+ 
+  
+  
+  df_peak <- df[t1_index:t2_index,]
+  
+  apex_index <- which.max(df_peak$net_y)
+  peak_apex_time <- df_peak$time_m[apex_index]
+  peak_average_time <- mean(c(df$time_m[t1_index], df$time_m[t2_index]))
+
+  
+  peak_height <- df_peak$net_y[apex_index]
+ 
+  
+  area <- time2_net_y_sum - time1_net_y_sum
+  tca_apex <- area/peak_apex_time
+  tca_average <- area/peak_average_time
+  
+  print(paste0('Peak Migration time (median): ', round(peak_average_time, 4), ' min'))
+  print(paste0('Peak Migration time (apex): ', round(peak_apex_time, 4), ' min'))
+  print(paste0('Peak Height (apex): ', peak_height, ' AU'))
+  print(paste0('Peak Area: ', round(area, 5), ' total AU'))
+  print(paste0('Time-Corrected Peak Area (median time): ', round(tca_average, 5)))
+  print(paste0('Time-Corrected Peak Area (apex time): ', round(tca_apex, 5)))
+  
+  migration_time_median <- c(peak_average_time)
+  migration_time_apex <- c(peak_apex_time)
+  area <- c(area)
+  corrected_area_median <- c(tca_average)
+  corrected_area_apex <- c(tca_apex)
+  starting_time <- c(df$time_m[t1_index])
+  ending_time <- c(df$time_m[t2_index])
+  height <- c(peak_height)
+  
+
+  
+  return_df <- data.frame(migration_time_median,
+                          migration_time_apex, 
+                          height,
+                          area,
+                          corrected_area_median,
+                          corrected_area_apex,
+                          starting_time,
+                          ending_time)
+  return(return_df)
+}
+
+#calculate peak area, height, TCA, etc.
+#'column' is the name of the y axis variable, default is AU (other would be RFU)
+#'peak only' shows only the integration for the selected peak. If false, the full integration trace will be shown
+#'integration scales to the response y axis, units are arbitrary
+sciex_peak_stats <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE) {
+  plot1 <- plot_sciex_CE(df, interactive = TRUE)
+  show(plot1)
+  
+  peak_start <- as.numeric(readline(prompt = 'peak start: '))
+  peak_end <- as.numeric(readline(prompt = 'peak end: '))
+  
+  
+  integrated_df <- add_integration_df(CE_df = df, correction_factor = correction_factor,
+                                      peak_start = peak_start, peak_end = peak_end)
+  
+  area_return_df <- peak_area_height_time(integrated_df, peak_start, peak_end)
+  
+  normalized_int_df <- integrated_df
+  
+  max_response <- max(integrated_df[[column]])
+  min_response <- min(integrated_df[[column]])
+  range_response <- max_response - min_response
+  
+  
+  max_int <- max(integrated_df$net_y_sum)
+  min_int <- min(integrated_df$net_y_sum)
+  range_int <- max_int - min_int
+  
+  
+  response_int_ratio <- range_response/range_int
+  
+  normalized_int_df$net_y_sum_norm <- (((normalized_int_df$net_y_sum - min_int)*range_response)/(range_int)) + min_response
+  
+  if(peak_only == TRUE) {
+    
+    
+    t1_index <- which.min(abs(integrated_df$time_m-peak_start))
+    t2_index <- which.min(abs(integrated_df$time_m-peak_end))
+    
+    int_subset_df <- normalized_int_df[t1_index:t2_index,]
+    max_int_sub <- max(int_subset_df$net_y_sum)
+    min_int_sub <- min(int_subset_df$net_y_sum)
+    range_int_sub <- max_int_sub - min_int_sub
+    
+    response_int_ratio_sub <- range_response/range_int_sub
+    
+    int_subset_df$net_y_sum_norm <- (((int_subset_df$net_y_sum - min_int_sub)*range_response)/(range_int_sub)) + min_response
+    
+    plot2 <- plot_sciex_CE(normalized_int_df, interactive = FALSE)
+    plot3 <- plot2 + geom_line(data = int_subset_df, aes(x = time_m, y = net_y_sum_norm), color = "green") +
+      geom_line(aes(x = time_m, y = baseline), color = 'red') +
+      geom_vline(xintercept = area_return_df$starting_time, color = 'red') + 
+      geom_vline(xintercept = area_return_df$ending_time, color = 'red')
+    plot4 <- ggplotly(plot3)
+    show(plot4)
+    
+  } else {
+    plot2 <- plot_sciex_CE(normalized_int_df, interactive = FALSE)
+    plot3 <- plot2 + geom_line(aes(x = time_m, y = net_y_sum_norm), color = "green") +
+      geom_line(aes(x = time_m, y = baseline), color = 'red') +
+      geom_vline(xintercept = area_return_df$starting_time, color = 'red') + 
+      geom_vline(xintercept = area_return_df$ending_time, color = 'red')
+    plot4 <- ggplotly(plot3)
+    show(plot4)
+  }
+}
+
+
+
 
 
