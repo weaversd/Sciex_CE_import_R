@@ -400,7 +400,8 @@ peak_area_height_time <- function(df, t1, t2){
 #'peak only' shows only the integration for the selected peak. If false, the full integration trace will be shown
 #'integration scales to the response y axis, units are arbitrary
 sciex_peak_stats <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE) {
-  plot1 <- plot_sciex_CE(df, interactive = TRUE)
+  
+  plot1 <- plot_sciex_CE(df, ylab = column, interactive = TRUE)
   show(plot1)
   
   peak_start <- as.numeric(readline(prompt = 'peak start: '))
@@ -443,7 +444,7 @@ sciex_peak_stats <- function(df, correction_factor = 1, column = 'AU', peak_only
     
     int_subset_df$net_y_sum_norm <- (((int_subset_df$net_y_sum - min_int_sub)*range_response)/(range_int_sub)) + min_response
     
-    plot2 <- plot_sciex_CE(normalized_int_df, interactive = FALSE)
+    plot2 <- plot_sciex_CE(normalized_int_df, ylab = column, interactive = FALSE)
     plot3 <- plot2 + geom_line(data = int_subset_df, aes(x = time_m, y = net_y_sum_norm), color = "green") +
       geom_line(aes(x = time_m, y = baseline), color = 'red') +
       geom_vline(xintercept = area_return_df$starting_time, color = 'red') + 
