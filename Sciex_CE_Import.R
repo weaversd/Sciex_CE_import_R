@@ -4,6 +4,7 @@ library(stringr)
 library(RColorBrewer)
 library(ggplot2)
 
+#creates df for sciex plotting
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
   
   channel_adj <- channels + 1 
@@ -117,6 +118,7 @@ create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
   return(df_plot)
 }
 
+#plots a single CE trace from the sciex table function above
 plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALSE,
                           xlab = 'Time (min)', ylab = 'Response', xmin = NA, xmax = NA,
                           ymax = NA, ymin = NA){
@@ -207,7 +209,7 @@ plot_sciex_overlay <-  function(df, x_axis = 'minutes', y_axis = 'AU', filtered 
 }
 
 #loops through a directory and creates a master dataframe, then plots using plot_CE_overlay
-overlay_sciex_directory <- function(folder, channels = 3, filterby = NA, x_axis = 'minutes', y_axis = 'RFU', 
+overlay_sciex_directory <- function(folder, channels = 3, filterby = NA, x_axis = 'minutes', y_axis = 'AU', 
                                     filtered = FALSE, xlab = 'Time (min)', ylab = 'Response', xmin = NA, xmax = NA,
                                     ymax = NA, ymin = NA, return = "plot"){
   wd <- getwd()
