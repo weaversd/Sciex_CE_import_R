@@ -5,9 +5,6 @@ library(RColorBrewer)
 library(ggplot2)
 library(plotly)
 
-# to suppress random warnings (bug, see )
-
-#!diagnostics suppress=net_y_sum, time_m
   
 #creates df for sciex plotting
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
