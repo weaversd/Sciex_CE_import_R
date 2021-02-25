@@ -136,7 +136,7 @@ plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALS
   y_var <- y_axis
   
   
-  plot <- ggplot(data = df) +
+  plot <- ggplot(data = df, aes(text1=time_m, text2=AU)) +
     geom_line(aes(x = eval(as.symbol(x_var)), y = eval(as.symbol(y_var))), size = 1) +
     theme_bw(base_size = 20)+
     labs(x=xlab, y=ylab)+
@@ -147,7 +147,7 @@ plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALS
   print(paste0('plotting ', x_var, ' vs ', y_var))
   
   if (interactive == TRUE){
-    plot <- ggplotly(plot)
+    plot <- ggplotly(plot, tooltip = c('text1', 'text2'))
   }
   
   return(plot)
@@ -446,7 +446,7 @@ sciex_peak_stats <- function(df, correction_factor = 1, column = 'AU', peak_only
       geom_line(aes(x = time_m, y = baseline), color = 'red') +
       geom_vline(xintercept = area_return_df$starting_time, color = 'red') + 
       geom_vline(xintercept = area_return_df$ending_time, color = 'red')
-    plot4 <- ggplotly(plot3)
+    plot4 <- ggplotly(plot3, tooltip=c('text1', 'text2'))
     show(plot4)
     
   } else {
@@ -455,7 +455,7 @@ sciex_peak_stats <- function(df, correction_factor = 1, column = 'AU', peak_only
       geom_line(aes(x = time_m, y = baseline), color = 'red') +
       geom_vline(xintercept = area_return_df$starting_time, color = 'red') + 
       geom_vline(xintercept = area_return_df$ending_time, color = 'red')
-    plot4 <- ggplotly(plot3)
+    plot4 <- ggplotly(plot3, tooltip=c('text1', 'text2'))
     show(plot4)
   }
 }
