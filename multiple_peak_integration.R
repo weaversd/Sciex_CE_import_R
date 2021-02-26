@@ -1,4 +1,4 @@
-sciex_multiple_peaks <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE, integral_percent = 0.6, integral_overlay = 1){
+sciex_multiple_peaks <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE, integral_percent = 0.6, integral_overlay = 1, int_std = 1){
   plot1 <- plot_sciex_CE(df, ylab = column, interactive = TRUE)
   show(plot1)
   
@@ -104,6 +104,34 @@ sciex_multiple_peaks <- function(df, correction_factor = 1, column = 'AU', peak_
   plot4 <- ggplotly(plot3, tooltip=c('text1', 'text2', 'y'))
   show(plot4)
   
-  return(return_df)
+  return(percent_peak_areas(return_df, int_std = int_std))
+}
+
+percent_peak_areas <- function(df, int_std = 1) {
+  total_peak_area <- sum(df$area)
+  total_tca_median <- sum(df$corrected_area_median)
+  total_tca_apex <- sum(df$corrected_area_apex)
+  
+  total_df <- data.frame(total_peak_area = total_peak_area,
+                         total_tca_median = total_tca_median,
+                         total_tca_apex = total_tca_apex)
+  
+  area_int_std <- df$area[int_std]
+  tca_median_std <- df$corrected_area_median[int_std]
+  tca_apex_std <- df$corrected_area_apex[int_std]
+  
+  peak_df <- df
+  peak_df$percent_area <- (peak_df$area / total_peak_area) * 100
+  peak_df$percent_tca_median <- (peak_df$corrected_area_median / total_tca_median) * 100
+  peak_df$percent_tca_apex <- (peak_df$corrected_area_apex / total_tca_apex) * 100
+  
+  peak_df$percent_std_area <- (peak_df$area / area_int_std) * 100
+  peak_df$percent_std_tca_median <- (peak_df$corrected_area_median / tca_median_std) * 100
+  peak_df$percent_std_tca_apex <- (peak_df$corrected_area_apex / tca_apex_std) * 100
+  
+  peak_df$std <- ""
+  peak_df$std[int_std] <- "*"
+  
+  return(list(peak_df, total_df))
 }
 

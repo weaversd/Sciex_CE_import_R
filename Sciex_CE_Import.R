@@ -4,7 +4,7 @@ library(stringr)
 library(RColorBrewer)
 library(ggplot2)
 library(plotly)
-
+library(BBmisc)
   
 #creates df for sciex plotting
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
@@ -257,10 +257,15 @@ add_fractions <- function(plot_obj, x1 = 1, x2 = 2, x3 = 3, x4 = 4, x5 = 5, colo
 
 
 #calculate integral plot from df
-add_integration_df <- function(CE_df, column = "AU", correction_factor = 1, peak_start = NA, peak_end = NA){
+add_integration_df <- function(CE_df, column = "AU", correction_factor = 1, peak_start = NA, peak_end = NA, multiples = FALSE){
   
-  print("What type of basline integration? 'value', 'flat','peak', or 'slope'")
-  baseline_type <- readline(prompt = 'baseline type: ')
+  
+  if (multiples == TRUE){
+    baseline_type <- 'peak'
+  } else {
+    print("What type of basline integration? 'value', 'flat','peak', or 'slope'")
+    baseline_type <- readline(prompt = 'baseline type: ')
+  }
   
   if(baseline_type == 'flat'){
     baseline_start <- as.numeric(readline(prompt = 'baseline start: '))
