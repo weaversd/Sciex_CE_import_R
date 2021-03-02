@@ -4,7 +4,7 @@ library(stringr)
 library(RColorBrewer)
 library(ggplot2)
 library(plotly)
-library(BBmisc)
+
   
 #creates df for sciex plotting
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
@@ -323,6 +323,7 @@ add_integration_df <- function(CE_df, column = "AU", correction_factor = 1, peak
   }
   
   CE_df$net_y <- CE_df[[column]] - CE_df$baseline
+  CE_df$net_y_tca <- CE_df$net_y / CE_df$time_m
   
   #get min per point, which will always be equal to the time in minutes at the second datapoint
   min_per_point <- CE_df$time_m[2]
@@ -341,6 +342,12 @@ add_integration_df <- function(CE_df, column = "AU", correction_factor = 1, peak
     CE_df$net_y_sum[i] <- CE_df$net_y_sum[i-1] + CE_df$net_y[i]
   }
   CE_df$net_y_sum <- CE_df$net_y_sum * correction_factor
+  
+  CE_df$net_y_sum_tca <- 0
+  for (i in 2:(nrow(CE_df))) {
+    CE_df$net_y_sum_tca[i] <- CE_df$net_y_sum_tca[i-1] + CE_df$net_y_tca[i]
+  }
+  CE_df$net_y_sum_tca <- CE_df$net_y_sum_tca * correction_factor
     
   return(CE_df)
 }
@@ -354,7 +361,9 @@ peak_area_height_time <- function(df, t1, t2){
 
   time2_net_y_sum <- df$net_y_sum[t2_index]
  
+  time1_net_y_sum_tca <- df$net_y_sum_tca[t1_index]
   
+  time2_net_y_sum_tca <- df$net_y_sum_tca[t2_index]
   
   df_peak <- df[t1_index:t2_index,]
   
@@ -367,6 +376,7 @@ peak_area_height_time <- function(df, t1, t2){
  
   
   area <- time2_net_y_sum - time1_net_y_sum
+  tca_absolute <- time2_net_y_sum_tca - time1_net_y_sum_tca
   tca_apex <- area/peak_apex_time
   tca_average <- area/peak_average_time
   
@@ -374,12 +384,14 @@ peak_area_height_time <- function(df, t1, t2){
   print(paste0('Peak Migration time (apex): ', round(peak_apex_time, 4), ' min'))
   print(paste0('Peak Height (apex): ', peak_height, ' AU'))
   print(paste0('Peak Area: ', round(area, 5), ' total AU'))
+  print(paste0('Time-Corrected Peak Area (absolute): ', round(tca_absolute, 5)))
   print(paste0('Time-Corrected Peak Area (median time): ', round(tca_average, 5)))
   print(paste0('Time-Corrected Peak Area (apex time): ', round(tca_apex, 5)))
   
   migration_time_median <- c(peak_average_time)
   migration_time_apex <- c(peak_apex_time)
   area <- c(area)
+  corrected_area_absolute <- c(tca_absolute)
   corrected_area_median <- c(tca_average)
   corrected_area_apex <- c(tca_apex)
   starting_time <- c(df$time_m[t1_index])
@@ -392,6 +404,7 @@ peak_area_height_time <- function(df, t1, t2){
                           migration_time_apex, 
                           height,
                           area,
+                          corrected_area_absolute,
                           corrected_area_median,
                           corrected_area_apex,
                           starting_time,
