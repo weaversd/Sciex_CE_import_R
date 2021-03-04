@@ -242,13 +242,14 @@ overlay_sciex_directory <- function(folder, channels = 3, filterby = NA, x_axis 
   }
 }
 #adds 4 vertical lines at specified values
-add_fractions <- function(plot_obj, x1 = 1, x2 = 2, x3 = 3, x4 = 4, x5 = 5, color = 'red'){
+add_fractions <- function(plot_obj, x1 = 1, x2 = 2, x3 = 3, x4 = 4, x5 = 5, color = 'red',
+                          linetype = 'solid', size = 1){
   new_plot <- plot_obj + 
-    geom_vline(xintercept = x1, color = color) +
-    geom_vline(xintercept = x2, color = color) +
-    geom_vline(xintercept = x3, color = color) +
-    geom_vline(xintercept = x4, color = color) +
-    geom_vline(xintercept = x5, color = color)
+    geom_vline(xintercept = x1, color = color, linetype = linetype, size = size) +
+    geom_vline(xintercept = x2, color = color, linetype = linetype, size = size) +
+    geom_vline(xintercept = x3, color = color, linetype = linetype, size = size) +
+    geom_vline(xintercept = x4, color = color, linetype = linetype, size = size) +
+    geom_vline(xintercept = x5, color = color, linetype = linetype, size = size)
   
   return(new_plot)
 }

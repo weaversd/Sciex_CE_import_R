@@ -1,4 +1,4 @@
-sciex_multiple_peaks <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE, integral_percent = 0.6, integral_overlay = 1, int_std = 1, integration_display = 'area'){
+sciex_multiple_peaks <- function(df, correction_factor = 1, column = 'AU', peak_only = TRUE, integral_percent = 0.6, integral_overlay = 1, int_std = 1, integration_display = 'tca'){
   plot1 <- plot_sciex_CE(df, ylab = column, interactive = TRUE)
   show(plot1)
   
