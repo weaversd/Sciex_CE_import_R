@@ -599,8 +599,3 @@ sciex_peak_stats <- function(df, column = 'AU', peak_only = TRUE) {
     show(plot4)
   }
 }
-
-
-
-
-
