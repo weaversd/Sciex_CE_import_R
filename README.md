@@ -9,7 +9,7 @@ Sciex_CE_Import.R has most of the base functions for importing and integrating r
 multiple_peak_integration.R has the files for integrating multiple peaks from the same run
 
 
-Pre-processing involves openning .asc file from the CE in excell, and saving as .xlsx
+Pre-processing involves openning .asc file from the CE in excel, and saving as .xlsx
 
 
 "custom overlay" function is an example of how to use the functions within Sciex_CE_import.R
