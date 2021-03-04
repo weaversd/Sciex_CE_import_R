@@ -14,7 +14,7 @@ library(plotly)
 #name = what the run is named (used in the legend for overlays. Default is file name)
 create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
   
-  #because the first row is not a channel, add 1
+  #because the first column is not a channel, add 1
   channel_adj <- channels + 1 
   
   #convert the number of channels to a letter for excel (columns are lettered, not numbered in excel)
