@@ -7,7 +7,7 @@ library(ggplot2)
 library(plotly)
 
 #Prior to any plotting, you must create a dataframe from the asc file,
-#and save it ias a dataframe object using 'create_sciex_table'
+#and save it as a dataframe object using 'create_sciex_table'
 #file = .xlsx file (asc file opened in excel, and then saved as .xlsx)
 #channels = number of channels (default is three: AU, kV, and A, but could be more)
 #filterby = the number of datapoints to take the median over. Default is NA, only use if there are many noise spikes
@@ -17,7 +17,7 @@ create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
   #because the first row is not a channel, add 1
   channel_adj <- channels + 1 
   
-  #convert thte number of channels to a letter for excel (columns are lettered, not numbered in excel)
+  #convert the number of channels to a letter for excel (columns are lettered, not numbered in excel)
   channel_import_letter <- chartr("123456789", "ABCDEFGHI", channel_adj)
   
   #create the variable for importing the channel names. First is always B:11, last is the letter corresponding to the channel number
