@@ -156,7 +156,7 @@ create_sciex_table <- function(file, channels = 3, filterby = NA, name = NA){
 #x and y min and max are for zooming in on the plot, can supply limits.
 #interactive is whether to plot it with plotly (default is FALSE, which will return a static ggplot object)
 plot_sciex_CE <- function(df, x_axis = 'minutes', y_axis = 'AU', filtered = FALSE,
-                          xlab = 'Time (min)', ylab = 'Response', xmin = NA, xmax = NA,
+                          xlab = 'Time (min)', ylab = 'Abs @ 214nm', xmin = NA, xmax = NA,
                           ymax = NA, ymin = NA, interactive = FALSE){
 
   #covert the axis inputs to column names
@@ -270,7 +270,7 @@ plot_sciex_overlay <-  function(df, x_axis = 'minutes', y_axis = 'AU', filtered 
 #loops through a directory and creates a master dataframe, then plots using plot_CE_overlay
 #same variables as plot_sciex_overlay. Trace names will be file names
 overlay_sciex_directory <- function(folder, channels = 3, filterby = NA, x_axis = 'minutes', y_axis = 'AU', 
-                                    filtered = FALSE, xlab = 'Time (min)', ylab = 'Response', xmin = NA, xmax = NA,
+                                    filtered = FALSE, xlab = 'Time (min)', ylab = 'Abs @ 214', xmin = NA, xmax = NA,
                                     ymax = NA, ymin = NA, return = "plot"){
   #get working directory
   wd <- getwd()
@@ -327,7 +327,7 @@ add_integration_df <- function(CE_df, column = "AU",
   if (multiples == TRUE){
     baseline_type <- 'peak'
   } else {
-    print("What type of basline integration? 'value', 'flat','peak', or 'slope'")
+    print("What type of basline integration? 'value', 'flat','peak', 'xy', or 'slope'")
     baseline_type <- readline(prompt = 'baseline type: ')
   }
   
@@ -402,6 +402,25 @@ add_integration_df <- function(CE_df, column = "AU",
       baseline_value <- as.numeric(readline(prompt = 'baseline value: '))
       CE_df$baseline <- baseline_value
 
+  } else if (baseline_type == 'xy') {
+    #takes the y value from two points and computes a linear fit between them to serve as baselin
+    baseline_start <- as.numeric(readline(prompt = 'baseline start: '))
+    baseline_end <- as.numeric(readline(prompt = 'baseline end: '))
+    baseline_index_start <- which.min(abs(CE_df$time_m - baseline_start))
+    baseline_index_end <- which.min(abs(CE_df$time_m - baseline_end))
+    
+    x1 <- CE_df$time_m[baseline_index_start]
+    x2 <- CE_df$time_m[baseline_index_end]
+    y1 <- CE_df[[column]][baseline_index_start]
+    y2 <- CE_df[[column]][baseline_index_end]
+    
+    #finds the slope and intercept between these points
+    slope <- (y2-y1)/(x2-x1)
+    y_intercept <- y1 - (slope * x1)
+    
+    #sets baseline for each point based on slope and intercept
+    CE_df$baseline <- slope * CE_df$time_m + y_intercept
+    
   } else {
     
     #if a valid answer isn't given. Will throw error later
